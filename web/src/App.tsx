@@ -1,22 +1,33 @@
+import { useEffect } from 'react'
+import { useAuth } from './auth/AuthProvider'
+import Dashboard from './pages/Dashboard'
+import SignIn from './pages/SignIn'
+import { initAnalytics, trackPageView } from './utils/analytics'
 import './App.css'
 
-const appName = import.meta.env.VITE_APP_NAME ?? 'Capital'
-const appEnv = import.meta.env.VITE_APP_ENV ?? 'local'
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '(not configured)'
+initAnalytics()
 
-function App() {
+/**
+ * Login → Dashboard. There is no router because there are no routes: the portal
+ * callback lands on /auth/callback, which the SPA history fallback serves with
+ * this same document, and AuthProvider consumes the token at boot.
+ */
+export default function App() {
+  const { status } = useAuth()
+
+  useEffect(() => {
+    if (status === 'authenticated') trackPageView('/dashboard', 'Dashboard')
+    else if (status === 'signed-out') trackPageView('/sign-in', 'Sign in')
+  }, [status])
+
+  if (status === 'authenticated') return <Dashboard />
+  if (status === 'signed-out') return <SignIn />
+
   return (
-    <main className="app">
-      <h1>{appName}</h1>
-      <p className="tagline">Aicountly</p>
-      <dl className="meta">
-        <dt>Environment</dt>
-        <dd>{appEnv}</dd>
-        <dt>API</dt>
-        <dd>{apiBaseUrl}</dd>
-      </dl>
+    <main className="screen">
+      <div className="panel">
+        <p className="message">Signing you in…</p>
+      </div>
     </main>
   )
 }
-
-export default App
